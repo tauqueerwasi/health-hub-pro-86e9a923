@@ -243,10 +243,48 @@
   /* Dashboard specific styles */
   .dashboard-sidebar {
     @apply fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border z-40;
+    @apply flex flex-col overflow-hidden;
+  }
+
+  .dashboard-sidebar-content {
+    @apply flex-1 overflow-y-auto overflow-x-hidden;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  }
+
+  .dashboard-sidebar-content::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .dashboard-sidebar-content::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .dashboard-sidebar-content::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 4px;
+  }
+
+  .dashboard-sidebar-content::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.5);
   }
 
   .dashboard-content {
-    @apply ml-64 min-h-screen p-6;
+    @apply ml-64 min-h-screen p-6 lg:p-8;
+  }
+
+  @media (max-width: 1024px) {
+    .dashboard-sidebar {
+      @apply -translate-x-full transition-transform duration-300 ease-in-out;
+    }
+
+    .dashboard-sidebar.open {
+      @apply translate-x-0;
+    }
+
+    .dashboard-content {
+      @apply ml-0 p-4;
+    }
   }
 
   .stat-card {
@@ -254,7 +292,19 @@
   }
 
   .stat-icon {
-    @apply w-12 h-12 rounded-xl flex items-center justify-center;
+    @apply w-12 h-12 rounded-xl flex items-center justify-center shrink-0;
+  }
+
+  /* Mobile sidebar overlay */
+  .sidebar-overlay {
+    @apply fixed inset-0 bg-foreground/50 z-30 lg:hidden;
+    backdrop-filter: blur(4px);
+  }
+
+  /* Mobile menu button */
+  .mobile-menu-btn {
+    @apply fixed top-4 left-4 z-50 lg:hidden p-2 rounded-xl bg-card shadow-lg border border-border;
+    @apply flex items-center justify-center transition-all duration-200 hover:bg-muted;
   }
 }
 

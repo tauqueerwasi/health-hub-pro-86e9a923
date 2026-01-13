@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/lib/auth-context";
+import { DoctorSelectionProvider } from "@/lib/doctor-selection-context";
 
 // Pages
 import Index from "./pages/Index";
@@ -23,37 +24,39 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/doctors" element={<Doctors />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            
-            {/* Admin routes */}
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/*" element={<AdminDashboard />} />
-            
-            {/* Doctor routes */}
-            <Route path="/doctor" element={<DoctorDashboard />} />
-            <Route path="/doctor/*" element={<DoctorDashboard />} />
-            
-            {/* Patient routes */}
-            <Route path="/patient" element={<PatientDashboard />} />
-            <Route path="/patient/*" element={<PatientDashboard />} />
-            
-            {/* Catch-all */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <DoctorSelectionProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/services" element={<Services />} />
+              <Route path="/doctors" element={<Doctors />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              
+              {/* Admin routes */}
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/*" element={<AdminDashboard />} />
+              
+              {/* Doctor routes */}
+              <Route path="/doctor" element={<DoctorDashboard />} />
+              <Route path="/doctor/*" element={<DoctorDashboard />} />
+              
+              {/* Patient routes */}
+              <Route path="/patient" element={<PatientDashboard />} />
+              <Route path="/patient/*" element={<PatientDashboard />} />
+              
+              {/* Catch-all */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </DoctorSelectionProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
