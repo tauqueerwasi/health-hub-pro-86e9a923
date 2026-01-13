@@ -1,35 +1,30 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { doctors, Doctor } from '@/lib/mock-data';
+import { doctors } from '@/lib/mock-data';
 import { useDoctorSelection } from '@/lib/doctor-selection-context';
 import { useAuth } from '@/lib/auth-context';
 import { Star, Clock, Users, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DoctorDetailModal } from '@/components/doctors/DoctorDetailModal';
 import { toast } from 'sonner';
 
 export default function Doctors() {
-  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
   const { selectedDoctor: globalSelectedDoctor, selectDoctor } = useDoctorSelection();
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const handleDoctorClick = (doctor: Doctor) => {
-    setSelectedDoctor(doctor);
-    setModalOpen(true);
-  };
-
-  const handleSelectDoctor = (doctor: Doctor) => {
+  const handleSelectDoctor = (doctor: typeof doctors[0], e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     selectDoctor(doctor);
     toast.success(`Dr. ${doctor.name.replace('Dr. ', '')} selected!`, {
       description: 'You can now book an appointment with this doctor.',
     });
   };
 
-  const handleBookAppointment = (doctor: Doctor) => {
+  const handleBookAppointment = (doctor: typeof doctors[0], e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     selectDoctor(doctor);
     if (user) {
       navigate('/patient/appointments');
@@ -62,11 +57,11 @@ export default function Doctors() {
               {doctors.map((doctor, index) => {
                 const isSelected = globalSelectedDoctor?.id === doctor.id;
                 return (
-                  <div
+                  <Link
                     key={doctor.id}
-                    className={`medical-card cursor-pointer relative ${isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                    to={`/doctors/${doctor.id}`}
+                    className={`medical-card block cursor-pointer relative transition-all hover:shadow-lg ${isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}`}
                     style={{ animationDelay: `${index * 0.05}s` }}
-                    onClick={() => handleDoctorClick(doctor)}
                   >
                     {isSelected && (
                       <div className="absolute -top-2 -right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center shadow-lg z-10">
@@ -96,10 +91,7 @@ export default function Doctors() {
                         className="flex-1" 
                         size="sm" 
                         variant={isSelected ? 'secondary' : 'outline'}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelectDoctor(doctor);
-                        }}
+                        onClick={(e) => handleSelectDoctor(doctor, e)}
                         disabled={!doctor.available}
                       >
                         {isSelected ? 'Selected' : 'Select'}
@@ -108,16 +100,13 @@ export default function Doctors() {
                         className="flex-1" 
                         size="sm" 
                         variant="default"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleBookAppointment(doctor);
-                        }}
+                        onClick={(e) => handleBookAppointment(doctor, e)}
                         disabled={!doctor.available}
                       >
                         Book
                       </Button>
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
@@ -125,14 +114,6 @@ export default function Doctors() {
         </section>
       </main>
       <Footer />
-      <DoctorDetailModal 
-        doctor={selectedDoctor} 
-        open={modalOpen} 
-        onOpenChange={setModalOpen}
-        onSelectDoctor={handleSelectDoctor}
-        onBookAppointment={handleBookAppointment}
-        isSelected={globalSelectedDoctor?.id === selectedDoctor?.id}
-      />
     </div>
   );
 }
