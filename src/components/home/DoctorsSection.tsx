@@ -1,10 +1,12 @@
-import { Star, ArrowRight } from 'lucide-react';
+import { Star, ArrowRight, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { doctors } from '@/lib/mock-data';
+import { useDoctorSelection } from '@/lib/doctor-selection-context';
 
 export function DoctorsSection() {
   const featuredDoctors = doctors.slice(0, 4);
+  const { selectedDoctor } = useDoctorSelection();
 
   return (
     <section className="py-20 bg-muted/50">
@@ -32,36 +34,43 @@ export function DoctorsSection() {
 
         {/* Doctors grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredDoctors.map((doctor, index) => (
-            <div
-              key={doctor.id}
-              className="medical-card text-center group"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <div className="relative inline-block mb-4">
-                <img
-                  src={doctor.avatar}
-                  alt={doctor.name}
-                  className="w-24 h-24 rounded-full object-cover mx-auto ring-4 ring-background shadow-lg group-hover:ring-primary/20 transition-all"
-                />
-                {doctor.available && (
-                  <span className="absolute bottom-1 right-1 w-4 h-4 bg-success rounded-full border-2 border-background" />
-                )}
-              </div>
-              <h3 className="font-heading font-semibold mb-1">{doctor.name}</h3>
-              <p className="text-primary text-sm mb-2">{doctor.specialty}</p>
-              <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground mb-3">
-                <Star className="w-4 h-4 fill-warning text-warning" />
-                <span className="font-medium">{doctor.rating}</span>
-                <span>• {doctor.experience} years exp.</span>
-              </div>
-              <Link to={`/doctors/${doctor.id}`}>
+          {featuredDoctors.map((doctor, index) => {
+            const isSelected = selectedDoctor?.id === doctor.id;
+            return (
+              <Link
+                key={doctor.id}
+                to={`/doctors/${doctor.id}`}
+                className={`medical-card text-center group block transition-all hover:shadow-lg ${isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <div className="relative inline-block mb-4">
+                  <img
+                    src={doctor.avatar}
+                    alt={doctor.name}
+                    className="w-24 h-24 rounded-full object-cover mx-auto ring-4 ring-background shadow-lg group-hover:ring-primary/20 transition-all"
+                  />
+                  {doctor.available && (
+                    <span className="absolute bottom-1 right-1 w-4 h-4 bg-success rounded-full border-2 border-background" />
+                  )}
+                  {isSelected && (
+                    <span className="absolute -top-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center shadow-lg">
+                      <CheckCircle className="w-4 h-4 text-primary-foreground" />
+                    </span>
+                  )}
+                </div>
+                <h3 className="font-heading font-semibold mb-1">{doctor.name}</h3>
+                <p className="text-primary text-sm mb-2">{doctor.specialty}</p>
+                <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground mb-3">
+                  <Star className="w-4 h-4 fill-warning text-warning" />
+                  <span className="font-medium">{doctor.rating}</span>
+                  <span>• {doctor.experience} years exp.</span>
+                </div>
                 <Button variant="ghost" size="sm" className="w-full">
                   View Profile
                 </Button>
               </Link>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
