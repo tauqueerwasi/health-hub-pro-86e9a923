@@ -33,21 +33,23 @@ const features = [
   },
 ];
 
+import { Link } from 'react-router-dom';
+
 export function WhyChooseUsSection() {
   return (
     <section className="py-20">
       <div className="container">
-        <div className="text-center max-w-2xl mx-auto mb-12">
+        <Link to="/healthcare-you-can-trust" className="block text-center max-w-2xl mx-auto mb-12 group">
           <span className="inline-block px-4 py-1.5 rounded-full bg-secondary/10 text-secondary text-sm font-medium mb-4">
             Why Choose Us
           </span>
-          <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">
+          <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4 group-hover:text-primary transition-colors">
             Healthcare You Can Trust
           </h2>
           <p className="text-muted-foreground">
             Experience the difference with our patient-centered approach and cutting-edge technology.
           </p>
-        </div>
+        </Link>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, index) => (

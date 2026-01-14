@@ -45,7 +45,7 @@ export function TreatmentCardsSection() {
           {treatments.map((treatment, index) => (
             <Link
               key={treatment.title}
-              to="/services"
+              to={`/specialties/${treatment.title.toLowerCase().replace(/\s+/g, '-')}/mumbai`}
               className="medical-card text-center group cursor-pointer"
               style={{ animationDelay: `${index * 0.05}s` }}
             >
