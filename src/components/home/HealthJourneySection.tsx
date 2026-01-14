@@ -27,21 +27,23 @@ const steps = [
   },
 ];
 
+import { Link } from 'react-router-dom';
+
 export function HealthJourneySection() {
   return (
     <section className="py-20 bg-muted/50">
       <div className="container">
-        <div className="text-center max-w-2xl mx-auto mb-16">
+        <Link to="/how-it-works" className="block text-center max-w-2xl mx-auto mb-16 group">
           <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
             Your Health Journey
           </span>
-          <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">
+          <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4 group-hover:text-primary transition-colors">
             How It Works
           </h2>
           <p className="text-muted-foreground">
             Get started with MediCare in four simple steps.
           </p>
-        </div>
+        </Link>
 
         <div className="relative">
           {/* Connection line */}
