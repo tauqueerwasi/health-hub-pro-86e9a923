@@ -4,6 +4,7 @@ import { Footer } from '@/components/layout/Footer';
 import { doctors } from '@/lib/mock-data';
 import { useDoctorSelection } from '@/lib/doctor-selection-context';
 import { useAuth } from '@/lib/auth-context';
+import { useAuthIntent } from '@/lib/auth-intent-context';
 import { 
   Star, 
   Clock, 
@@ -26,6 +27,7 @@ export default function DoctorDetail() {
   const navigate = useNavigate();
   const { selectedDoctor: globalSelectedDoctor, selectDoctor } = useDoctorSelection();
   const { user } = useAuth();
+  const { saveIntentAndRedirect } = useAuthIntent();
 
   const doctor = doctors.find((d) => d.id === id);
   const isSelected = globalSelectedDoctor?.id === doctor?.id;
@@ -61,14 +63,17 @@ export default function DoctorDetail() {
   const handleBookAppointment = () => {
     selectDoctor(doctor);
     if (user) {
-      navigate('/patient/appointments');
+      // Navigate to appointment booking page, NOT back to doctor page
+      navigate('/appointments/book');
     } else {
-      toast.info('Please login to book an appointment', {
-        action: {
-          label: 'Login',
-          onClick: () => navigate('/login'),
-        },
+      // Save intent and redirect to login
+      saveIntentAndRedirect('/appointments/book', {
+        doctorId: doctor.id,
+        specialty: doctor.specialty,
+        sourcePage: `/doctors/${doctor.id}`,
       });
+      toast.info('Please login to book an appointment');
+      navigate('/login');
     }
   };
 
