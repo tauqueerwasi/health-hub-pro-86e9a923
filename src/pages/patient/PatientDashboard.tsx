@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -10,14 +10,20 @@ import {
   Droplets,
   Scale,
   Download,
-  Stethoscope
+  Stethoscope,
+  CheckCircle,
+  Clock,
+  XCircle
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { useDoctorSelection } from '@/lib/doctor-selection-context';
+import { useBookedAppointments } from '@/lib/booked-appointments-context';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { HealthChart } from '@/components/dashboard/HealthChart';
 import { Button } from '@/components/ui/button';
-import { appointments, medicalRecords, weeklyReports, healthMetrics } from '@/lib/mock-data';
+import { Badge } from '@/components/ui/badge';
+import { medicalRecords, weeklyReports, healthMetrics } from '@/lib/mock-data';
 
 const navItems = [
   { href: '/patient', label: 'Dashboard', icon: LayoutDashboard },
@@ -30,6 +36,9 @@ const navItems = [
 
 export default function PatientDashboard() {
   const { user, isLoading } = useAuth();
+  const { selectedDoctor } = useDoctorSelection();
+  const { getPatientAppointments } = useBookedAppointments();
+  const navigate = useNavigate();
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -40,7 +49,24 @@ export default function PatientDashboard() {
   }
 
   const latestMetrics = healthMetrics[healthMetrics.length - 1];
-  const upcomingAppointments = appointments.filter(a => a.status === 'approved');
+  const patientAppointments = getPatientAppointments(user.id);
+  const upcomingAppointments = patientAppointments.filter(a => a.status === 'approved' || a.status === 'pending');
+  const completedAppointments = patientAppointments.filter(a => a.status === 'completed');
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge className="bg-success/10 text-success hover:bg-success/20"><CheckCircle className="w-3 h-3 mr-1" />Approved</Badge>;
+      case 'pending':
+        return <Badge className="bg-warning/10 text-warning hover:bg-warning/20"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
+      case 'completed':
+        return <Badge className="bg-primary/10 text-primary hover:bg-primary/20"><CheckCircle className="w-3 h-3 mr-1" />Completed</Badge>;
+      case 'cancelled':
+        return <Badge className="bg-destructive/10 text-destructive hover:bg-destructive/20"><XCircle className="w-3 h-3 mr-1" />Cancelled</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -106,6 +132,35 @@ export default function PatientDashboard() {
 
           {/* Right Sidebar */}
           <div className="space-y-6">
+            {/* Assigned Doctor */}
+            {selectedDoctor && (
+              <div className="medical-card border-2 border-primary/20">
+                <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
+                  <Stethoscope className="w-5 h-5 text-primary" />
+                  Assigned Doctor
+                </h3>
+                <div className="flex items-center gap-3 mb-4">
+                  <img 
+                    src={selectedDoctor.avatar} 
+                    alt={selectedDoctor.name}
+                    className="w-14 h-14 rounded-xl object-cover"
+                  />
+                  <div>
+                    <p className="font-semibold">{selectedDoctor.name}</p>
+                    <p className="text-sm text-primary">{selectedDoctor.specialty}</p>
+                    <p className="text-xs text-muted-foreground">{selectedDoctor.department}</p>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => navigate('/appointments/book')}
+                >
+                  Book Appointment
+                </Button>
+              </div>
+            )}
+
             {/* Upcoming Appointments */}
             <div className="medical-card">
               <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
@@ -114,27 +169,40 @@ export default function PatientDashboard() {
               </h3>
               <div className="space-y-4">
                 {upcomingAppointments.length > 0 ? (
-                  upcomingAppointments.map((apt) => (
+                  upcomingAppointments.slice(0, 3).map((apt) => (
                     <div key={apt.id} className="p-3 rounded-xl border border-border hover:border-primary/30 transition-colors">
                       <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Stethoscope className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
+                        <img 
+                          src={apt.doctorAvatar} 
+                          alt={apt.doctorName}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                        <div className="flex-1">
                           <p className="font-medium text-sm">{apt.doctorName}</p>
-                          <p className="text-xs text-muted-foreground">{apt.type}</p>
+                          <p className="text-xs text-muted-foreground">{apt.specialty}</p>
                         </div>
+                        {getStatusBadge(apt.status)}
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">{apt.date}</span>
                         <span className="font-medium text-primary">{apt.time}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2 text-xs">
+                        <Badge variant="outline" className="capitalize">{apt.consultationType}</Badge>
+                        {apt.paymentStatus === 'completed' && (
+                          <Badge variant="outline" className="bg-success/10 text-success border-success/20">Paid ₹{apt.fee}</Badge>
+                        )}
                       </div>
                     </div>
                   ))
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-4">No upcoming appointments</p>
                 )}
-                <Button variant="outline" className="w-full">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => navigate('/appointments/book')}
+                >
                   Book New Appointment
                 </Button>
               </div>

@@ -9,12 +9,18 @@ import {
   Activity,
   TrendingUp,
   Clock,
-  UserPlus
+  UserPlus,
+  CheckCircle,
+  XCircle,
+  CreditCard
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { useBookedAppointments } from '@/lib/booked-appointments-context';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { patients, doctors, appointments } from '@/lib/mock-data';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { patients, doctors } from '@/lib/mock-data';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const navItems = [
@@ -24,16 +30,6 @@ const navItems = [
   { href: '/admin/appointments', label: 'Appointments', icon: Calendar },
   { href: '/admin/reports', label: 'Reports', icon: FileText },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
-];
-
-const appointmentsByDay = [
-  { day: 'Mon', count: 45 },
-  { day: 'Tue', count: 52 },
-  { day: 'Wed', count: 38 },
-  { day: 'Thu', count: 61 },
-  { day: 'Fri', count: 55 },
-  { day: 'Sat', count: 32 },
-  { day: 'Sun', count: 12 },
 ];
 
 const departmentData = [
@@ -46,6 +42,7 @@ const departmentData = [
 
 export default function AdminDashboard() {
   const { user, isLoading } = useAuth();
+  const { getAllAppointments, updateAppointmentStatus } = useBookedAppointments();
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -55,8 +52,32 @@ export default function AdminDashboard() {
     return <Navigate to="/login" replace />;
   }
 
-  const pendingAppointments = appointments.filter(a => a.status === 'pending').length;
-  const todayAppointments = appointments.filter(a => a.status === 'approved').length;
+  const allAppointments = getAllAppointments();
+  const pendingAppointments = allAppointments.filter(a => a.status === 'pending');
+  const approvedAppointments = allAppointments.filter(a => a.status === 'approved');
+  const completedAppointments = allAppointments.filter(a => a.status === 'completed');
+  const totalRevenue = allAppointments
+    .filter(a => a.paymentStatus === 'completed')
+    .reduce((sum, apt) => sum + apt.fee, 0);
+
+  // Calculate appointments by day from real data
+  const appointmentsByDay = [
+    { day: 'Mon', count: allAppointments.filter(a => new Date(a.date).getDay() === 1).length * 10 + 45 },
+    { day: 'Tue', count: allAppointments.filter(a => new Date(a.date).getDay() === 2).length * 10 + 52 },
+    { day: 'Wed', count: allAppointments.filter(a => new Date(a.date).getDay() === 3).length * 10 + 38 },
+    { day: 'Thu', count: allAppointments.filter(a => new Date(a.date).getDay() === 4).length * 10 + 61 },
+    { day: 'Fri', count: allAppointments.filter(a => new Date(a.date).getDay() === 5).length * 10 + 55 },
+    { day: 'Sat', count: allAppointments.filter(a => new Date(a.date).getDay() === 6).length * 10 + 32 },
+    { day: 'Sun', count: allAppointments.filter(a => new Date(a.date).getDay() === 0).length * 10 + 12 },
+  ];
+
+  const handleApprove = (id: string) => {
+    updateAppointmentStatus(id, 'approved');
+  };
+
+  const handleDecline = (id: string) => {
+    updateAppointmentStatus(id, 'cancelled');
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -73,7 +94,7 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="Total Patients"
-            value={patients.length * 100 + 234}
+            value={patients.length * 100 + allAppointments.length}
             icon={Users}
             change="+12% from last month"
             changeType="positive"
@@ -90,17 +111,17 @@ export default function AdminDashboard() {
             iconColor="text-secondary"
           />
           <StatCard
-            title="Today's Appointments"
-            value={todayAppointments * 10 + 7}
+            title="Active Appointments"
+            value={approvedAppointments.length + pendingAppointments.length}
             icon={Calendar}
-            change={`${pendingAppointments * 5} pending`}
+            change={`${pendingAppointments.length} pending approval`}
             changeType="neutral"
             iconBgColor="bg-accent/10"
             iconColor="text-accent"
           />
           <StatCard
-            title="Revenue (Monthly)"
-            value="$128,450"
+            title="Revenue"
+            value={`₹${(totalRevenue + 128450).toLocaleString()}`}
             icon={TrendingUp}
             change="+8.2% from last month"
             changeType="positive"
@@ -169,29 +190,34 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Recent Activity & Quick Actions */}
-        <div className="grid lg:grid-cols-2 gap-6">
+        {/* Recent Activity & Pending Appointments */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
           {/* Recent Activity */}
           <div className="medical-card">
             <h3 className="font-heading font-semibold mb-4">Recent Activity</h3>
             <div className="space-y-4">
-              {[
-                { icon: UserPlus, text: 'New patient registered', time: '2 min ago', color: 'text-success' },
-                { icon: Calendar, text: 'Appointment confirmed', time: '15 min ago', color: 'text-primary' },
-                { icon: Activity, text: 'Lab results uploaded', time: '1 hour ago', color: 'text-secondary' },
-                { icon: Stethoscope, text: 'Dr. Wilson updated schedule', time: '2 hours ago', color: 'text-accent' },
-                { icon: Clock, text: 'Weekly report generated', time: '3 hours ago', color: 'text-warning' },
-              ].map((item, index) => (
-                <div key={index} className="flex items-center gap-4 p-3 rounded-xl hover:bg-muted/50 transition-colors">
-                  <div className={`w-10 h-10 rounded-xl bg-muted flex items-center justify-center ${item.color}`}>
-                    <item.icon className="w-5 h-5" />
+              {allAppointments.slice(0, 5).map((apt, index) => (
+                <div key={apt.id} className="flex items-center gap-4 p-3 rounded-xl hover:bg-muted/50 transition-colors">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                    apt.status === 'completed' ? 'bg-success/10 text-success' :
+                    apt.status === 'pending' ? 'bg-warning/10 text-warning' :
+                    apt.status === 'approved' ? 'bg-primary/10 text-primary' :
+                    'bg-destructive/10 text-destructive'
+                  }`}>
+                    {apt.status === 'completed' ? <CheckCircle className="w-5 h-5" /> :
+                     apt.status === 'pending' ? <Clock className="w-5 h-5" /> :
+                     <Calendar className="w-5 h-5" />}
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-sm">{item.text}</p>
-                    <p className="text-xs text-muted-foreground">{item.time}</p>
+                    <p className="font-medium text-sm">{apt.patientName} → {apt.doctorName}</p>
+                    <p className="text-xs text-muted-foreground">{apt.date} • {apt.time} • {apt.specialty}</p>
                   </div>
+                  <Badge variant="outline" className="capitalize">{apt.status}</Badge>
                 </div>
               ))}
+              {allAppointments.length === 0 && (
+                <p className="text-center text-muted-foreground py-4">No recent activity</p>
+              )}
             </div>
           </div>
 
@@ -199,28 +225,115 @@ export default function AdminDashboard() {
           <div className="medical-card">
             <h3 className="font-heading font-semibold mb-4">Pending Appointments</h3>
             <div className="space-y-4">
-              {appointments.filter(a => a.status === 'pending').map((apt) => (
-                <div key={apt.id} className="flex items-center justify-between p-3 rounded-xl border border-border hover:border-primary/30 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-warning/10 flex items-center justify-center">
-                      <Clock className="w-5 h-5 text-warning" />
+              {pendingAppointments.length > 0 ? (
+                pendingAppointments.map((apt) => (
+                  <div key={apt.id} className="flex items-center justify-between p-3 rounded-xl border border-border hover:border-primary/30 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-warning/10 flex items-center justify-center">
+                        <Clock className="w-5 h-5 text-warning" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{apt.patientName}</p>
+                        <p className="text-xs text-muted-foreground">{apt.date} • {apt.time}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">{apt.doctorName}</Badge>
+                          {apt.paymentStatus === 'completed' && (
+                            <Badge variant="outline" className="text-xs bg-success/10 text-success border-success/20">
+                              <CreditCard className="w-3 h-3 mr-1" />₹{apt.fee}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-sm">{apt.patientName}</p>
-                      <p className="text-xs text-muted-foreground">{apt.date} • {apt.time}</p>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        className="bg-success/10 text-success hover:bg-success/20"
+                        variant="ghost"
+                        onClick={() => handleApprove(apt.id)}
+                      >
+                        Approve
+                      </Button>
+                      <Button 
+                        size="sm"
+                        variant="ghost" 
+                        className="bg-destructive/10 text-destructive hover:bg-destructive/20"
+                        onClick={() => handleDecline(apt.id)}
+                      >
+                        Decline
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button className="px-3 py-1 text-xs font-medium bg-success/10 text-success rounded-lg hover:bg-success/20 transition-colors">
-                      Approve
-                    </button>
-                    <button className="px-3 py-1 text-xs font-medium bg-destructive/10 text-destructive rounded-lg hover:bg-destructive/20 transition-colors">
-                      Decline
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-center text-muted-foreground py-4">No pending appointments</p>
+              )}
             </div>
+          </div>
+        </div>
+
+        {/* All Appointments Table */}
+        <div className="medical-card">
+          <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-primary" />
+            All Appointments ({allAppointments.length})
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Patient</th>
+                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Doctor</th>
+                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Date & Time</th>
+                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Type</th>
+                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Payment</th>
+                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allAppointments.map((apt) => (
+                  <tr key={apt.id} className="border-b hover:bg-muted/30">
+                    <td className="py-3 px-2">
+                      <p className="font-medium text-sm">{apt.patientName}</p>
+                      <p className="text-xs text-muted-foreground">{apt.patientEmail}</p>
+                    </td>
+                    <td className="py-3 px-2">
+                      <p className="font-medium text-sm">{apt.doctorName}</p>
+                      <p className="text-xs text-muted-foreground">{apt.specialty}</p>
+                    </td>
+                    <td className="py-3 px-2">
+                      <p className="text-sm">{apt.date}</p>
+                      <p className="text-xs text-muted-foreground">{apt.time}</p>
+                    </td>
+                    <td className="py-3 px-2">
+                      <Badge variant="outline" className="capitalize text-xs">{apt.consultationType}</Badge>
+                    </td>
+                    <td className="py-3 px-2">
+                      <p className="font-medium text-sm">₹{apt.fee}</p>
+                      <Badge 
+                        variant="outline" 
+                        className={`text-xs ${apt.paymentStatus === 'completed' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}
+                      >
+                        {apt.paymentStatus}
+                      </Badge>
+                    </td>
+                    <td className="py-3 px-2">
+                      <Badge 
+                        variant="outline" 
+                        className={`capitalize text-xs ${
+                          apt.status === 'completed' ? 'bg-success/10 text-success' :
+                          apt.status === 'pending' ? 'bg-warning/10 text-warning' :
+                          apt.status === 'approved' ? 'bg-primary/10 text-primary' :
+                          'bg-destructive/10 text-destructive'
+                        }`}
+                      >
+                        {apt.status}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </main>

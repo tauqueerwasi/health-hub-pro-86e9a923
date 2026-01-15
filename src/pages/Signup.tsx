@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth, UserRole } from '@/lib/auth-context';
+import { useAuthIntent } from '@/lib/auth-intent-context';
 import { useToast } from '@/hooks/use-toast';
 
 const roles: { value: UserRole; label: string; icon: React.ElementType; description: string }[] = [
@@ -20,6 +21,7 @@ export default function Signup() {
   const [selectedRole, setSelectedRole] = useState<UserRole>('patient');
   const [isLoading, setIsLoading] = useState(false);
   const { signup } = useAuth();
+  const { authIntent, clearIntent } = useAuthIntent();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -33,6 +35,14 @@ export default function Signup() {
         title: 'Account created!',
         description: 'Welcome to MediCare. Your account has been created successfully.',
       });
+      
+      // Check for auth intent (continue previous flow)
+      if (authIntent?.intendedPath) {
+        const path = authIntent.intendedPath;
+        clearIntent();
+        navigate(path);
+        return;
+      }
       
       switch (selectedRole) {
         case 'admin':

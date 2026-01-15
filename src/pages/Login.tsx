@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth, UserRole } from '@/lib/auth-context';
+import { useAuthIntent } from '@/lib/auth-intent-context';
 import { useToast } from '@/hooks/use-toast';
 
 const roles: { value: UserRole; label: string; icon: React.ElementType; description: string }[] = [
@@ -19,6 +20,7 @@ export default function Login() {
   const [selectedRole, setSelectedRole] = useState<UserRole>('patient');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
+  const { authIntent, clearIntent } = useAuthIntent();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -33,7 +35,15 @@ export default function Login() {
         description: 'You have successfully logged in.',
       });
       
-      // Navigate based on role
+      // Check for auth intent (continue previous flow)
+      if (authIntent?.intendedPath) {
+        const path = authIntent.intendedPath;
+        clearIntent();
+        navigate(path);
+        return;
+      }
+      
+      // Navigate based on role (default behavior)
       switch (selectedRole) {
         case 'admin':
           navigate('/admin');
